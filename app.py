@@ -1,5 +1,3 @@
-import requests
-
 from flask import Flask, jsonify, request, redirect
 app = Flask(__name__)
 
@@ -37,7 +35,7 @@ def chromeapi():
 
     post_json = request.json
     post_json["token"] = TOKEN
-    r3 = requests.post(API_URL, json=post_json)
+    r3 = request.post(API_URL, json=post_json)
     return r3.json()
 
 app.run(port=8081)
