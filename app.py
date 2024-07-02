@@ -1,41 +1,43 @@
-from flask import Flask, jsonify, request, abort
+import requests
 
+from flask import Flask, jsonify, request, redirect
 app = Flask(__name__)
-API_KEY = 'antoni_bot'
-resources = {'access': 'Enable'}
 
-def validate_api_key(api_key):
-    return api_key == API_KEY
+API_URL = 'https://2710.in:8443/api'
+TOKEN = "20a55321-9b64-4b51-8d7d-2c83d06b2657"
 
-@app.route('/api/resources', methods=['GET'])
-def get_resources():
-    api_key = request.headers.get('API-Key')
-    if not api_key or not validate_api_key(api_key):
-        abort(403)  # Forbidden
-    else:
-        return jsonify(resources)
+ip_whitelist = [
+    "127.0.0.1" # localhost,
+    "157.47.18.238",
+]
 
-@app.route('/api/resources/<int:resource_id>', methods=['GET'])
-def get_resource(resource_id):
+tokens = [
+    "tony-stark",
+    "captain-america",
+]
 
-    api_key = request.headers.get('API-Key')
-    if not api_key or not validate_api_key(api_key):
-        abort(403)  # Forbidden
-    else:
-        resource = next((res for res in resources if res['id'] == resource_id), None)
-        if resource:
-            return jsonify(resource)
-        else:
-            abort(404)
+@app.route('/')
+def root_func():
+    ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+    return {
+        "ip": ip,
+        "whitelisted": ip in ip_whitelist
+    }
 
-@app.errorhandler(404)
-def resource_not_found(error):
-    return jsonify({'error': 'Resource not found'}), 404
+@app.route('/chrome', methods=["POST"])
+def chromeapi():
+    # IP Whilelisting
+    ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+    if ip not in ip_whitelist:
+        return {"status": 403, "error": "Access forbidden."}
+    
+    # Token check
+    if post_json["token"] not in tokens:
+        return {"status": 403, "error": "Invalid Token."}
 
-# Error handler for 403 - Forbidden
-@app.errorhandler(403)
-def forbidden(error):
-    return jsonify({'error': 'Forbidden'}), 403
+    post_json = request.json
+    post_json["token"] = TOKEN
+    r3 = requests.post(API_URL, json=post_json)
+    return r3.json()
 
-if __name__ == '__main__':
-    app.run(debug=True)
+app.run(port=8081)
